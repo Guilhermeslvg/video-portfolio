@@ -1,14 +1,13 @@
-// Vídeo no estilo "mockup 3D cinematográfico": um celular preto deitado sobre uma mesa escura de ripas, com a câmera
-// se movendo devagar entre ângulos (de cima, inclinado, close na tela, em pé) e o site rolando na tela. Sem legenda e sem voz.
+// Vídeo no estilo "mockup 3D cinematográfico", em um plano só: a câmera anda sem cortes em volta de um celular preto
+// com espessura de verdade, deitado numa mesa escura de ripas, com blocos, traços de luz e partículas em volta.
+// O site roda na tela do começo ao fim. Sem legenda e sem voz; no final a câmera recua e o nome aparece.
 import React from "react";
 import {
   AbsoluteFill,
   Composition,
-  Easing,
   OffthreadVideo,
-  Sequence,
   interpolate,
-  spring,
+  random,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -20,125 +19,148 @@ const { fontFamily: OUTFIT } = carregarOutfit("normal", { weights: ["500", "800"
 const { fontFamily: MONO } = carregarMono("normal", { weights: ["500"], subsets: ["latin"] });
 
 const FPS = 30;
-const COR = { ciano: "#2cd3f2", bebe: "#d4eaff", claro: "#4c9be8" };
+const DURACAO = 33; // segundos
+const TOTAL = DURACAO * FPS;
+const COR = { ciano: "#2cd3f2", bebe: "#d4eaff", claro: "#4c9be8", azul: "#1d5fd0" };
 
-// câmera: rx/ry/rz em graus, s = zoom, x/y = deslocamento do mundo (px), foco = posição vertical da tela (0 topo, 1 base)
-type Cam = { rx: number; ry: number; rz: number; s: number; x: number; y: number };
-type Cena = { dur: number; video: number; de: Cam; para: Cam };
-// video = segundo da gravação do celular onde a cena começa (hero 0, serviços 5.4, projetos 11.1, efeitos 16.1, jarvis 21.3, processo 24.9, contato 29.2)
-const CENAS: Cena[] = [
-  { dur: 3.4, video: 0.2, de: { rx: 56, ry: 0, rz: -30, s: 1.0, x: 0, y: -40 }, para: { rx: 50, ry: 0, rz: -22, s: 1.18, x: 0, y: -80 } },
-  { dur: 3.6, video: 1.6, de: { rx: 40, ry: -6, rz: 18, s: 2.1, x: -60, y: 560 }, para: { rx: 36, ry: -4, rz: 12, s: 2.35, x: -20, y: 420 } },
-  { dur: 3.8, video: 5.6, de: { rx: 8, ry: -22, rz: -6, s: 1.08, x: 0, y: 20 }, para: { rx: 6, ry: 18, rz: -3, s: 1.14, x: 0, y: 0 } },
-  { dur: 3.4, video: 11.2, de: { rx: 62, ry: 0, rz: 28, s: 1.55, x: 120, y: 260 }, para: { rx: 58, ry: 0, rz: 20, s: 1.7, x: 40, y: 120 } },
-  { dur: 3.8, video: 16.2, de: { rx: 34, ry: 10, rz: -14, s: 2.4, x: 30, y: 300 }, para: { rx: 30, ry: 8, rz: -8, s: 2.2, x: 10, y: 180 } },
-  { dur: 3.4, video: 21.4, de: { rx: 10, ry: 24, rz: 4, s: 1.12, x: 0, y: 30 }, para: { rx: 12, ry: -14, rz: 2, s: 1.2, x: 0, y: 0 } },
-  { dur: 3.4, video: 25.0, de: { rx: 64, ry: 0, rz: -18, s: 1.9, x: -80, y: -120 }, para: { rx: 60, ry: 0, rz: -26, s: 2.05, x: -40, y: -240 } },
-  { dur: 3.6, video: 29.4, de: { rx: 46, ry: 0, rz: 30, s: 1.2, x: 0, y: 40 }, para: { rx: 50, ry: 0, rz: 38, s: 1.0, x: 260, y: 80 } },
+// caminho da câmera: pontos-chave em segundos; entre eles a câmera passa em curva suave (Catmull-Rom), sem parar nem cortar.
+// rx = inclinação da mesa, rz = giro no plano da mesa, ry = giro lateral, s = zoom, x/y = deslocamento em px (na escala da tela 1080 de largura)
+type Cam = { t: number; rx: number; ry: number; rz: number; s: number; x: number; y: number };
+const CAMINHO: Cam[] = [
+  { t: 0, rx: 62, ry: 0, rz: -38, s: 0.82, x: 0, y: 40 },
+  { t: 3.5, rx: 55, ry: 0, rz: -26, s: 1.12, x: 0, y: -40 },
+  { t: 7, rx: 42, ry: -8, rz: -8, s: 2.0, x: -40, y: 420 },
+  { t: 10.5, rx: 26, ry: -16, rz: 4, s: 1.35, x: 0, y: 120 },
+  { t: 14, rx: 48, ry: 0, rz: 22, s: 1.55, x: 60, y: 60 },
+  { t: 17.5, rx: 36, ry: 10, rz: 10, s: 2.2, x: 20, y: 260 },
+  { t: 21, rx: 20, ry: 18, rz: -4, s: 1.3, x: 0, y: 0 },
+  { t: 24.5, rx: 52, ry: 0, rz: -20, s: 1.8, x: -40, y: -180 },
+  { t: 28, rx: 58, ry: 0, rz: -34, s: 1.15, x: 0, y: -60 },
+  { t: 33, rx: 64, ry: 0, rz: -44, s: 0.72, x: 0, y: 120 },
 ];
-const INICIOS = CENAS.map((_, i) => Math.round(CENAS.slice(0, i).reduce((s, c) => s + c.dur, 0) * FPS));
-const CORPO = Math.round(CENAS.reduce((s, c) => s + c.dur, 0) * FPS);
-const FINAL = 96;
-const TOTAL = CORPO + FINAL;
-const TRANS = 7; // quadros de passagem entre cenas
+const CHAVES: (keyof Omit<Cam, "t">)[] = ["rx", "ry", "rz", "s", "x", "y"];
+function camera(seg: number): Omit<Cam, "t"> {
+  const P = CAMINHO;
+  let i = 0; while (i < P.length - 2 && seg > P[i + 1].t) i++;
+  const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+  const u = Math.min(1, Math.max(0, (seg - p1.t) / (p2.t - p1.t)));
+  const u2 = u * u, u3 = u2 * u;
+  const out = {} as Omit<Cam, "t">;
+  for (const k of CHAVES) out[k] = 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * u + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * u2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * u3);
+  return out;
+}
 
-const mistura = (a: Cam, b: Cam, t: number): Cam => ({ rx: a.rx + (b.rx - a.rx) * t, ry: a.ry + (b.ry - a.ry) * t, rz: a.rz + (b.rz - a.rz) * t, s: a.s + (b.s - a.s) * t, x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
-
-// o celular: corpo preto de titânio, botões laterais, tela com o site e um reflexo de luz passando no vidro
-const Celular: React.FC<{ altura: number; video: number; brilho: number }> = ({ altura, video, brilho }) => {
-  const largura = Math.round(altura * (780 / 1688));
-  const borda = Math.round(altura * 0.018);
+// o celular com espessura: a frente (tela) e várias camadas atrás formando a lateral de metal
+const ALT = 1180, LARG = Math.round(ALT * (780 / 1688)), BORDA = 22, RAIO = ALT * 0.09, CAMADAS = 14, ESP = 2.2;
+const Celular: React.FC<{ brilho: number }> = ({ brilho }) => {
+  const W = LARG + BORDA * 2, H = ALT + BORDA * 2;
   return (
-    <div style={{ position: "relative", width: largura + borda * 2, height: altura + borda * 2, padding: borda, borderRadius: altura * 0.09,
-      background: "linear-gradient(135deg, #3a3f4a 0%, #0d0f14 18%, #1b1f27 50%, #07080b 80%, #2a2f39 100%)",
-      boxShadow: "inset 0 0 0 2px rgba(255,255,255,.08), inset 0 0 0 5px #050608" }}>
-      {/* botões laterais */}
-      {[[0.2, 0.06], [0.3, 0.1], [0.43, 0.1]].map(([t, h], i) => <span key={i} style={{ position: "absolute", left: -4, top: altura * t, width: 4, height: altura * h, borderRadius: 3, background: "#1c2029" }} />)}
-      <span style={{ position: "absolute", right: -4, top: altura * 0.3, width: 4, height: altura * 0.14, borderRadius: 3, background: "#1c2029" }} />
-      <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: altura * 0.074, overflow: "hidden", background: "#000" }}>
-        <OffthreadVideo src={staticFile("celular.mp4")} startFrom={Math.round(video * FPS)} muted style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-        <div style={{ position: "absolute", top: altura * 0.013, left: "50%", width: largura * 0.3, height: altura * 0.032, marginLeft: -largura * 0.15, borderRadius: 999, background: "#000" }} />
-        {/* reflexo no vidro */}
-        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(115deg, transparent ${brilho - 18}%, rgba(255,255,255,.13) ${brilho}%, transparent ${brilho + 18}%)` }} />
-        <div style={{ position: "absolute", inset: 0, boxShadow: "inset 0 0 40px rgba(0,0,0,.35)" }} />
+    <div style={{ position: "absolute", left: -W / 2, top: -H / 2, width: W, height: H, transformStyle: "preserve-3d" }}>
+      {/* lateral: camadas empilhadas, mais claras nas pontas como metal escovado */}
+      {Array.from({ length: CAMADAS }, (_, i) => {
+        const z = -(i + 1) * ESP, luz = i === 0 || i === CAMADAS - 1 ? 0.22 : 0.1 + 0.05 * Math.sin(i);
+        return <div key={i} style={{ position: "absolute", inset: 0, borderRadius: RAIO, transform: `translateZ(${z}px)`,
+          background: `linear-gradient(135deg, rgba(150,165,190,${luz + 0.12}), rgba(20,24,32,1) 25%, rgba(40,46,58,1) 55%, rgba(12,14,19,1) 80%, rgba(140,155,180,${luz}))` }} />;
+      })}
+      {/* frente */}
+      <div style={{ position: "absolute", inset: 0, padding: BORDA, borderRadius: RAIO, background: "#06070a", boxShadow: "inset 0 0 0 2px rgba(255,255,255,.1)" }}>
+        <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: RAIO * 0.82, overflow: "hidden", background: "#000" }}>
+          <OffthreadVideo src={staticFile("celular.mp4")} muted style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          <div style={{ position: "absolute", top: ALT * 0.013, left: "50%", width: LARG * 0.3, height: ALT * 0.032, marginLeft: -LARG * 0.15, borderRadius: 999, background: "#000" }} />
+          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(115deg, transparent ${brilho - 16}%, rgba(255,255,255,.14) ${brilho}%, transparent ${brilho + 16}%)` }} />
+          <div style={{ position: "absolute", inset: 0, boxShadow: "inset 0 0 50px rgba(0,0,0,.4)" }} />
+        </div>
       </div>
     </div>
   );
 };
 
-// a mesa: ripas escuras com uma luz azul fria vinda de um lado
-const Mesa: React.FC<{ largura: number; altura: number }> = ({ largura, altura }) => (
-  <div style={{ position: "absolute", left: -largura, top: -altura, width: largura * 3, height: altura * 3,
-    background: "radial-gradient(40% 35% at 60% 45%, rgba(76,155,232,.16), transparent 70%), repeating-linear-gradient(90deg, #0b0f19 0 34px, #141b2b 34px 40px, #070a12 40px 44px)",
-    filter: "blur(1.2px)" }} />
+// bloco escuro de ripas em cima da mesa (com altura, para dar profundidade quando a câmera passa)
+const Bloco: React.FC<{ x: number; y: number; w: number; h: number; alto: number; giro: number }> = ({ x, y, w, h, alto, giro }) => (
+  <div style={{ position: "absolute", left: x - w / 2, top: y - h / 2, width: w, height: h, transformStyle: "preserve-3d", transform: `rotateZ(${giro}deg)` }}>
+    {Array.from({ length: 10 }, (_, i) => (
+      <div key={i} style={{ position: "absolute", inset: 0, transform: `translateZ(${(i / 9) * alto - 40}px)`, borderRadius: 6,
+        background: i === 9 ? "repeating-linear-gradient(90deg, #121a2b 0 22px, #1b2538 22px 26px, #0a0f19 26px 30px)" : "#090d16" }} />
+    ))}
+  </div>
 );
 
-const CenaVideo: React.FC<{ c: Cena; altura: number; w: number; h: number }> = ({ c, altura, w, h }) => {
-  const f = useCurrentFrame();
-  const q = Math.round(c.dur * FPS);
-  const t = interpolate(f, [0, q], [0, 1], { easing: Easing.inOut(Easing.cubic), extrapolateRight: "clamp" });
-  const cam = mistura(c.de, c.para, t);
-  const entra = interpolate(f, [0, TRANS], [0, 1], { extrapolateRight: "clamp" });
-  const sai = interpolate(f, [q - 2, q + TRANS - 2], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const brilho = interpolate(f, [0, q], [-20, 120]);
+// traço de luz deitado na mesa: uma linha fina azul com um brilho correndo por ela
+const Traco: React.FC<{ x: number; y: number; comp: number; giro: number; atraso: number; f: number }> = ({ x, y, comp, giro, atraso, f }) => {
+  const p = ((f + atraso) % 150) / 150;
   return (
-    <AbsoluteFill style={{ opacity: Math.min(entra, sai), perspective: 1500, perspectiveOrigin: "50% 45%", overflow: "hidden" }}>
-      <AbsoluteFill style={{ transformStyle: "preserve-3d", transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.s}) rotateX(${cam.rx}deg) rotateY(${cam.ry}deg) rotateZ(${cam.rz}deg)` }}>
-        <Mesa largura={w} altura={h} />
-        {/* sombra do celular na mesa */}
-        <div style={{ position: "absolute", left: "50%", top: "50%", width: altura * 0.5, height: altura * 1.02, marginLeft: -altura * 0.25, marginTop: -altura * 0.49, borderRadius: altura * 0.1, background: "rgba(0,0,0,.75)", filter: "blur(28px)", transform: "translate(18px, 26px)" }} />
-        <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%) translateZ(18px)" }}>
-          <Celular altura={altura} video={c.video} brilho={brilho} />
-        </div>
-      </AbsoluteFill>
-    </AbsoluteFill>
-  );
-};
-
-// assinatura discreta no canto e cartão final
-const Assinatura: React.FC = () => {
-  const f = useCurrentFrame();
-  return (
-    <div style={{ position: "absolute", left: 56, top: 54, fontFamily: MONO, fontSize: 20, letterSpacing: ".22em", textTransform: "uppercase", color: COR.bebe,
-      opacity: interpolate(f, [10, 30, CORPO - 10, CORPO], [0, 0.6, 0.6, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>
-      Guilherme · portfólio 2026
+    <div style={{ position: "absolute", left: x, top: y, width: comp, height: 4, transform: `rotateZ(${giro}deg) translateZ(-36px)`, transformOrigin: "0 50%",
+      background: "rgba(76,155,232,.3)", boxShadow: "0 0 14px rgba(44,211,242,.4)" }}>
+      <div style={{ position: "absolute", top: -2, left: `${p * 100}%`, width: comp * 0.22, height: 7, marginLeft: -comp * 0.11, borderRadius: 7,
+        background: `linear-gradient(90deg, transparent, ${COR.ciano}, #fff, ${COR.ciano}, transparent)`, boxShadow: `0 0 24px ${COR.ciano}`, opacity: Math.sin(p * Math.PI) }} />
     </div>
   );
 };
 
-const Final: React.FC<{ escala: number }> = ({ escala }) => {
-  const f = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const a = spring({ frame: f - 2, fps, config: { damping: 18 } });
-  const b = spring({ frame: f - 12, fps, config: { damping: 18 } });
-  const brilho = interpolate(f, [10, 55], [130, -40], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  return (
-    <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", textAlign: "center", background: "radial-gradient(60% 40% at 50% 45%, rgba(29,95,208,.35), transparent 70%), #04070f" }}>
-      <div style={{ fontFamily: OUTFIT, fontWeight: 900, fontSize: 150 * escala, letterSpacing: "-.045em", lineHeight: 0.9, opacity: a, transform: `translateY(${(1 - a) * 40}px)`,
-        background: `linear-gradient(110deg, ${COR.bebe} ${brilho - 14}%, ${COR.ciano} ${brilho}%, ${COR.bebe} ${brilho + 14}%)`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>GUILHERME</div>
-      <div style={{ marginTop: 22 * escala, fontFamily: OUTFIT, fontWeight: 500, fontSize: 40 * escala, color: COR.bebe, opacity: b }}>Sites, sistemas e marketing</div>
-      <div style={{ marginTop: 44 * escala, fontFamily: MONO, fontSize: 26 * escala, letterSpacing: ".08em", color: COR.ciano, opacity: b }}>guilhermeslvg.github.io/guilherme-site</div>
-      <div style={{ marginTop: 14 * escala, fontFamily: OUTFIT, fontWeight: 800, fontSize: 40 * escala, color: "#fff", opacity: b }}>@guiilhermesg_</div>
-    </AbsoluteFill>
-  );
-};
+// partículas de luz em profundidades diferentes (as de longe ficam borradas)
+const PARTICULAS = Array.from({ length: 34 }, (_, i) => ({
+  x: (random(`x${i}`) - 0.5) * 1700, y: (random(`y${i}`) - 0.5) * 2200, z: 60 + random(`z${i}`) * 360,
+  r: 4 + random(`r${i}`) * 9, v: 0.2 + random(`v${i}`) * 0.6, fase: random(`f${i}`) * 6.28,
+}));
 
 const Filme: React.FC<{ formato: "story" | "feed" }> = ({ formato }) => {
+  const f = useCurrentFrame();
   const { width, height } = useVideoConfig();
-  const story = formato === "story";
-  const altura = story ? 1180 : 900;
+  const seg = f / FPS;
+  const cam = camera(seg);
+  const k = width / 1080; // a câmera foi pensada para 1080 de largura
+  const zoomBase = formato === "story" ? 1 : 0.78;
+  const brilho = interpolate(f % 180, [0, 180], [-30, 130]);
+  const final = interpolate(seg, [DURACAO - 4.2, DURACAO - 3], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const pulso = 0.75 + 0.25 * Math.sin(seg * 1.4);
   return (
-    <AbsoluteFill style={{ background: "#04070f" }}>
-      {CENAS.map((c, i) => (
-        <Sequence key={i} from={INICIOS[i]} durationInFrames={Math.round(c.dur * FPS) + TRANS}>
-          <CenaVideo c={c} altura={altura} w={width} h={height} />
-        </Sequence>
-      ))}
-      {/* vinheta e grão por cima de tudo */}
-      <AbsoluteFill style={{ pointerEvents: "none", background: "radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.65))" }} />
-      <AbsoluteFill style={{ pointerEvents: "none", opacity: 0.12, mixBlendMode: "overlay", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
-      <Assinatura />
-      <Sequence from={CORPO}><Final escala={story ? 1 : 0.86} /></Sequence>
+    <AbsoluteFill style={{ background: "#03060d", overflow: "hidden" }}>
+      <AbsoluteFill style={{ perspective: 1500 * k, perspectiveOrigin: "50% 46%" }}>
+        <div style={{ position: "absolute", left: "50%", top: "50%", width: 0, height: 0, transformStyle: "preserve-3d",
+          transform: `translate(${cam.x * k}px, ${cam.y * k}px) scale(${cam.s * zoomBase * k}) rotateX(${cam.rx}deg) rotateY(${cam.ry}deg) rotateZ(${cam.rz}deg)` }}>
+          {/* mesa de ripas, com a luz fria vinda do centro */}
+          <div style={{ position: "absolute", left: -3000, top: -3800, width: 6000, height: 7600, transform: "translateZ(-40px)",
+            background: "radial-gradient(28% 22% at 50% 50%, rgba(29,95,208,.32), transparent 70%), repeating-linear-gradient(90deg, #070b14 0 30px, #0f1626 30px 36px, #04070d 36px 40px)" }} />
+          {/* brilho e sombra do celular na mesa */}
+          <div style={{ position: "absolute", left: -LARG * 0.9, top: -ALT * 0.7, width: LARG * 1.8, height: ALT * 1.4, transform: "translateZ(-39px)", borderRadius: "50%",
+            background: `radial-gradient(closest-side, rgba(44,211,242,${0.22 * pulso}), transparent)`, filter: "blur(30px)" }} />
+          <div style={{ position: "absolute", left: -LARG * 0.55 + 30, top: -ALT * 0.53 + 40, width: LARG * 1.1, height: ALT * 1.06, transform: "translateZ(-38px)", borderRadius: RAIO, background: "rgba(0,0,0,.85)", filter: "blur(34px)" }} />
+          {/* blocos em volta */}
+          <Bloco x={-620} y={-260} w={420} h={640} alto={90} giro={8} />
+          <Bloco x={640} y={360} w={460} h={760} alto={130} giro={-6} />
+          <Bloco x={-560} y={860} w={380} h={420} alto={60} giro={14} />
+          <Bloco x={560} y={-820} w={340} h={380} alto={170} giro={-12} />
+          {/* traços de luz na mesa */}
+          <Traco x={-1100} y={680} comp={1000} giro={-8} atraso={0} f={f} />
+          <Traco x={340} y={-720} comp={800} giro={12} atraso={60} f={f} />
+          <Traco x={-380} y={-680} comp={60} giro={90} atraso={110} f={f} />
+          <Traco x={330} y={-560} comp={1100} giro={90} atraso={90} f={f} />
+          <Traco x={-1500} y={-1300} comp={800} giro={20} atraso={30} f={f} />
+          {/* o celular, um pouco acima da mesa */}
+          <div style={{ position: "absolute", left: 0, top: 0, transformStyle: "preserve-3d", transform: "translateZ(0px)" }}><Celular brilho={brilho} /></div>
+          {/* partículas */}
+          {PARTICULAS.map((p, i) => {
+            const z = p.z + Math.sin(seg * p.v + p.fase) * 40;
+            const desfoque = Math.max(0, (z - 160) / 60);
+            return <div key={i} style={{ position: "absolute", left: p.x + Math.sin(seg * p.v * 0.7 + p.fase) * 60, top: p.y, width: p.r * 2, height: p.r * 2, borderRadius: "50%",
+              transform: `translateZ(${z}px)`, background: i % 3 ? COR.claro : COR.ciano, boxShadow: `0 0 ${p.r * 4}px ${COR.ciano}`, filter: `blur(${desfoque}px)`, opacity: 0.55 + 0.45 * Math.sin(seg * p.v * 2 + p.fase) ** 2 }} />;
+          })}
+        </div>
+      </AbsoluteFill>
+      {/* luz de cena, vinheta e grão */}
+      <AbsoluteFill style={{ pointerEvents: "none", background: "radial-gradient(70% 50% at 70% 10%, rgba(76,155,232,.12), transparent 70%)" }} />
+      <AbsoluteFill style={{ pointerEvents: "none", background: "radial-gradient(120% 85% at 50% 46%, transparent 50%, rgba(0,0,0,.7))" }} />
+      <AbsoluteFill style={{ pointerEvents: "none", opacity: 0.1, mixBlendMode: "overlay", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+      <div style={{ position: "absolute", left: 56 * k, top: 54 * k, fontFamily: MONO, fontSize: 20 * k, letterSpacing: ".22em", textTransform: "uppercase", color: COR.bebe,
+        opacity: interpolate(seg, [0.5, 1.5], [0, 0.55], { extrapolateRight: "clamp" }) * (1 - final) }}>Guilherme · portfólio 2026</div>
+      {/* final: a câmera recua e o nome aparece por cima, sem corte */}
+      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", textAlign: "center", background: `rgba(3,6,13,${0.62 * final})`, opacity: final }}>
+        <div style={{ fontFamily: OUTFIT, fontWeight: 900, fontSize: 150 * k * (formato === "story" ? 1 : 0.86), letterSpacing: "-.045em", lineHeight: 0.9, transform: `translateY(${(1 - final) * 30}px)`,
+          background: `linear-gradient(110deg, ${COR.bebe} 35%, ${COR.ciano} 50%, ${COR.bebe} 65%)`, backgroundSize: "300% 100%", backgroundPosition: `${interpolate(seg, [DURACAO - 3, DURACAO], [100, 0], { extrapolateLeft: "clamp" })}% 0`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>GUILHERME</div>
+        <div style={{ marginTop: 20 * k, fontFamily: OUTFIT, fontWeight: 500, fontSize: 40 * k, color: COR.bebe }}>Sites, sistemas e marketing</div>
+        <div style={{ marginTop: 40 * k, fontFamily: MONO, fontSize: 26 * k, letterSpacing: ".08em", color: COR.ciano }}>guilhermeslvg.github.io/guilherme-site</div>
+        <div style={{ marginTop: 12 * k, fontFamily: OUTFIT, fontWeight: 800, fontSize: 40 * k, color: "#fff" }}>@guiilhermesg_</div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
