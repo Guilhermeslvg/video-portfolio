@@ -66,11 +66,12 @@ const Abertura: React.FC = () => {
 // legendas do meio, trocando conforme a parte do site que está passando
 const LEGENDAS: [number, string, string][] = [
   [0, "Abertura", "A foto vira armadura com a rolagem"],
-  [80, "Serviços", "Portfólios, landing pages animadas e sistemas"],
-  [150, "Projetos no ar", "Sites de clientes passando numa faixa curva"],
-  [215, "Para devs", "Minha framework de efeitos, feita do zero"],
-  [300, "Como funciona", "Do primeiro oi ao site no ar"],
-  [355, "Contato", "Quatro perguntas e a mensagem pronta no WhatsApp"],
+  [128, "Serviços", "Portfólios, landing pages animadas e sistemas"],
+  [164, "Projetos no ar", "Sites de clientes numa faixa curva"],
+  [182, "Para devs", "Minha framework de efeitos, feita do zero"],
+  [256, "Jarvis", "Assistente por voz que eu mesmo criei"],
+  [274, "Como funciona", "Do primeiro oi ao site no ar"],
+  [345, "Contato", "Quatro perguntas e a mensagem pronta no WhatsApp"],
 ];
 
 // 2. o portfólio rolando dentro de uma janela de navegador que entra inclinada e se endireita
