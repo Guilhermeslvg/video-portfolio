@@ -1,0 +1,13 @@
+{
+  "trechos": [
+    {"id": "abertura", "segundos": 2.7, "titulo": "Prazer, eu sou o Guilherme.", "etiqueta": "Web designer"},
+    {"id": "hero", "segundos": 5.4, "titulo": "Sites que prendem a atenção desde o primeiro segundo.", "etiqueta": "Abertura"},
+    {"id": "servicos", "segundos": 5.7, "titulo": "Portfólios, landing pages animadas, sistemas e tráfego pago.", "etiqueta": "O que eu faço"},
+    {"id": "projetos", "segundos": 5.0, "titulo": "Projetos reais, no ar, sendo usados por clientes.", "etiqueta": "Projetos"},
+    {"id": "efeitos", "segundos": 5.2, "titulo": "Minha própria framework de efeitos, feita do zero.", "etiqueta": "Para devs"},
+    {"id": "jarvis", "segundos": 3.6, "titulo": "Até um assistente por voz feito por mim.", "etiqueta": "Jarvis"},
+    {"id": "processo", "segundos": 4.3, "titulo": "Do primeiro oi ao site no ar, você acompanha tudo.", "etiqueta": "Como funciona"},
+    {"id": "contato", "segundos": 4.3, "titulo": "Quer um site assim? Me chama no WhatsApp.", "etiqueta": "Contato"}
+  ],
+  "final": 3.2
+}

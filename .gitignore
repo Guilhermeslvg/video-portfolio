@@ -5,3 +5,9 @@ dist
 
 # Ignore the output video from Git but not videos you import into src/.
 out
+
+# quadros da gravação (dá para gerar de novo com narracao/gravar-celular.cjs)
+narracao/quadros/
+narracao/posicoes.json
+saida/*.png
+saida/*.jpg
