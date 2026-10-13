@@ -1,54 +1,13 @@
-# Remotion video
+# Vídeo do portfólio
 
-<p align="center">
-  <a href="https://github.com/remotion-dev/logo">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-dark.apng">
-      <img alt="Animated Remotion Logo" src="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-light.gif">
-    </picture>
-  </a>
-</p>
+Vídeo de apresentação do [portfólio do Guilherme](https://guilhermeslvg.github.io/guilherme-site/), feito com Remotion.
 
-Welcome to your Remotion project!
+- Vídeo pronto: [saida/portfolio-guilherme.mp4](saida/portfolio-guilherme.mp4) (1920x1080, 19 s)
+- A gravação do site fica em `public/portfolio.mp4`; a composição está em `src/Composition.tsx` (abertura com o nome, o site rolando numa janela de navegador com legendas e o final com o link).
 
-## Commands
+Para gerar de novo:
 
-**Install Dependencies**
-
-```console
-npm i --loglevel=error
 ```
-
-**Start Preview**
-
-```console
-npm run dev
+npm install
+npx remotion render src/index.ts Portfolio saida/portfolio-guilherme.mp4
 ```
-
-**Render video**
-
-```console
-npx remotion render
-```
-
-**Upgrade Remotion**
-
-```console
-npx remotion upgrade
-```
-
-## Docs
-
-Get started with Remotion by reading the [fundamentals page](https://www.remotion.dev/docs/the-fundamentals).
-
-## Help
-
-We provide help on our [Discord server](https://discord.gg/6VzzNDwUwV).
-
-## Issues
-
-Found an issue with Remotion? [File an issue here](https://github.com/remotion-dev/remotion/issues/new).
-
-## License
-
-Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
