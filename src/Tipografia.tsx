@@ -10,12 +10,13 @@ import { AbsoluteFill, Composition, Easing, interpolate, useCurrentFrame, useVid
 import { loadFont as carregarOutfit } from "@remotion/google-fonts/Outfit";
 import { loadFont as carregarMono } from "@remotion/google-fonts/JetBrainsMono";
 import { Celular3D, QUADROS_TELA } from "./tres/Celular3D";
+import marcos from "./marcos.json";
 
 const { fontFamily: OUTFIT } = carregarOutfit("normal", { weights: ["500", "800", "900"], subsets: ["latin", "latin-ext"] });
 const { fontFamily: MONO } = carregarMono("normal", { weights: ["500"], subsets: ["latin"] });
 
 const FPS = 30;
-const VEL = 1.8; // velocidade da gravação na tela
+const VEL = 1; // a tela roda em velocidade normal (a gravação já tem as paradas)
 const INICIO = Math.round(0.9 * FPS); // o site começa a rodar na tela
 const FIM_SITE = INICIO + Math.round(QUADROS_TELA / VEL);
 const CARTAO = FIM_SITE - 6;
@@ -26,11 +27,11 @@ const TROCA = 12; // quadros da passagem de cor
 type Secao = { seg: number; fundo: string; letra: string; palavras: string[] };
 const SECOES: Secao[] = [
   { seg: 0, fundo: "#d4eaff", letra: "#0c2a6b", palavras: ["SITES", "DESIGN", "GUILHERME"] },
-  { seg: 5.4, fundo: "#2cd3f2", letra: "#06112b", palavras: ["PORTFÓLIOS", "LANDING PAGES", "SISTEMAS"] },
-  { seg: 11.1, fundo: "#4c9be8", letra: "#06112b", palavras: ["PROJETOS", "NO AR", "CLIENTES"] },
-  { seg: 16.1, fundo: "#06112b", letra: "#1d5fd0", palavras: ["EFEITOS", "FRAMEWORK", "ANIMAÇÃO"] },
-  { seg: 21.3, fundo: "#1d5fd0", letra: "#030916", palavras: ["AUTOMAÇÃO", "IA", "PROCESSO"] },
-  { seg: 29.2, fundo: "#d4eaff", letra: "#0c2a6b", palavras: ["WHATSAPP", "ORÇAMENTO", "CONTATO"] },
+  { seg: marcos.painel, fundo: "#2cd3f2", letra: "#06112b", palavras: ["PORTFÓLIOS", "LANDING PAGES", "SISTEMAS"] },
+  { seg: marcos.projetos, fundo: "#4c9be8", letra: "#06112b", palavras: ["PROJETOS", "NO AR", "CLIENTES"] },
+  { seg: marcos.efeitos, fundo: "#06112b", letra: "#1d5fd0", palavras: ["EFEITOS", "FRAMEWORK", "ANIMAÇÃO"] },
+  { seg: marcos.jarvis, fundo: "#1d5fd0", letra: "#030916", palavras: ["AUTOMAÇÃO", "IA", "PROCESSO"] },
+  { seg: marcos.contato, fundo: "#d4eaff", letra: "#0c2a6b", palavras: ["WHATSAPP", "ORÇAMENTO", "CONTATO"] },
   { seg: 999, fundo: "#030916", letra: "#0f2350", palavras: ["GUILHERME"] },
 ];
 const quadroSecao = (s: Secao, i: number) => (i === SECOES.length - 1 ? CARTAO : INICIO + Math.round((s.seg * FPS) / VEL));

@@ -11,13 +11,15 @@ import { AbsoluteFill, Composition, Easing, interpolate, useCurrentFrame, useVid
 import { loadFont as carregarOutfit } from "@remotion/google-fonts/Outfit";
 import { loadFont as carregarMono } from "@remotion/google-fonts/JetBrainsMono";
 import { Celular3D } from "./tres/Celular3D";
+import marcos from "./marcos.json";
 
 const { fontFamily: OUTFIT } = carregarOutfit("normal", { weights: ["500", "800", "900"], subsets: ["latin", "latin-ext"] });
 const { fontFamily: MONO } = carregarMono("normal", { weights: ["500"], subsets: ["latin"] });
 
-const FPS = 30, DURACAO = 23, TOTAL = DURACAO * FPS;
-const ENGOLE = 16.2 * FPS; // a massa começa a subir
-const CARTAO = 19.2 * FPS; // entra o nome
+const FPS = 30, INICIO_TELA = 2.4;
+const ENGOLE = Math.round((INICIO_TELA + marcos.fim - 1.2) * FPS); // a massa sobe depois que o contato aparece
+const CARTAO = ENGOLE + 3 * FPS; // entra o nome
+const TOTAL = CARTAO + Math.round(3.6 * FPS), DURACAO = TOTAL / FPS;
 
 // reflexos de estúdio (sem baixar nada: ambiente gerado na hora)
 const Ambiente: React.FC = () => {
@@ -82,7 +84,7 @@ const Cena: React.FC<{ formato: "story" | "feed" }> = ({ formato }) => {
   const celY = -1.1 + entra * 1.18 + Math.sin(t * 0.6) * 0.025 - sobe * 0.35;
   const giroY = -0.42 + Math.sin(t * 0.32) * 0.2 + entra * 0.12;
   const giroZ = -0.16 + Math.sin(t * 0.25) * 0.05;
-  const zoomCam = formato === "story" ? 1 : 0.86;
+  const zoomCam = formato === "story" ? 1 : 0.98;
   const mundoZ = interpolate(f, [0, ENGOLE, CARTAO], [-0.2, 0.25, 0.8], { extrapolateRight: "clamp" });
   return (
     <group scale={zoomCam} position={[0, 0, mundoZ]}>
@@ -92,7 +94,7 @@ const Cena: React.FC<{ formato: "story" | "feed" }> = ({ formato }) => {
       <pointLight position={[-2.2, 0.4, 1.5]} intensity={14} distance={7} color="#2cd3f2" />
       <pointLight position={[2.2, -1, 1.2]} intensity={12} distance={7} color="#4c9be8" />
       <spotLight position={[0, 4, 3]} angle={0.5} penumbra={0.8} intensity={30} color="#ffffff" />
-      <Celular3D velocidade={1.9} inicioVideo={Math.round(2.4 * FPS)} posicao={[0, celY, 0]} rotacao={[0.06, giroY, giroZ]} />
+      <Celular3D velocidade={1} inicioVideo={Math.round(INICIO_TELA * FPS)} posicao={[0, celY, 0]} rotacao={[0.06, giroY, giroZ]} />
       {/* massa: base embaixo, dois "dedos" segurando dos lados e uma dobra na frente */}
       <Massa pos={[0, -1.45 + sobe * 1.5, -0.25]} esc={[2.2 * cresce, 1.0 * cresce, 1.25]} semente={1} forca={0.32} t={t} material={material} />
       <Massa pos={[-0.62, -0.62 + sobe * 1.3, 0.12]} esc={[0.42 * cresce, 0.85 * cresce, 0.45]} semente={7} forca={0.3} t={t} material={material} />

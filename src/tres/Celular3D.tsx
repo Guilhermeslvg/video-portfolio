@@ -5,6 +5,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "re
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import { Sequence, interpolate, staticFile, useCurrentFrame, useDelayRender } from "remotion";
+import marcos from "../marcos.json";
 
 export const TELA_L = 0.74, TELA_A = 1.6; // tela na proporção da gravação (780 x 1688, a mesma do iPhone)
 const BORDA = 0.022; // borda preta em volta da tela
@@ -49,7 +50,7 @@ function texturaLogo() {
 
 // a tela usa as imagens da gravação do celular (public/tela/qNNNN.jpg). Cada quadro carrega a imagem certa e só
 // libera a captura depois de redesenhar a cena com ela (o ThreeCanvas não redesenha sozinho quando a imagem chega).
-export const QUADROS_TELA = 1005;
+export const QUADROS_TELA = marcos.quadros;
 const TelaVideo: React.FC<{ geo: THREE.BufferGeometry; velocidade: number }> = ({ geo, velocidade }) => {
   const f = useCurrentFrame();
   const { advance } = useThree();
